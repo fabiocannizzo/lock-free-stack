@@ -12,9 +12,9 @@ namespace LockFree
         typedef uint32_t index_t;
         typedef uint64_t bundle_t;
 
-    private:
         static const index_t s_null = ~index_t(0);
 
+    private:
         union Bundle
         {
             Bundle(index_t index, index_t count)
@@ -84,8 +84,8 @@ namespace LockFree
             if (candidate != s_null) {
                 index_t next = m_next[candidate];
                 Bundle newtop(next, curtop.m_value.m_count + 1);
-                // In the very remote eventuality that, while this thread is here,
-                // all the below circumstances occur simultaneously:
+                // In the very remote eventuality that, between reading 'm_top' and 
+                // the next line other threads cause all the below circumstances occur simultaneously:
                 // - other threads execute exactly a multiple of 2^32 pop or push operations,
                 //   so that 'm_count' assumes again the original value;
                 // - the value read as 'candidate' 2^32 transactions ago is again top of the stack;
