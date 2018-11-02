@@ -8,17 +8,16 @@ namespace LockFree
 {
     class LockFreeIndexStack
     {
-        typedef uint32_t bundle_t;
-
     public:
-        typedef uint16_t index_t;
+        typedef uint32_t index_t;
+        typedef uint64_t bundle_t;
 
     private:
         static const index_t s_null = ~index_t(0);
 
         union Bundle
         {
-            Bundle(uint16_t index, uint16_t count)
+            Bundle(index_t index, index_t count)
             {
                 m_value.m_index = index;
                 m_value.m_count = count;
@@ -30,8 +29,8 @@ namespace LockFree
             }
 
             struct {
-                uint16_t m_index;
-                uint16_t m_count;  // this is to probabilistically avoid the ABA problem (Treiber)
+                index_t m_index;
+                index_t m_count;  // this is to probabilistically avoid the ABA problem (Treiber)
             } m_value;
 
             bundle_t m_bundle;
@@ -145,4 +144,3 @@ namespace LockFree
     };
 
 } // namespace LockFree
-
