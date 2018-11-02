@@ -10,11 +10,11 @@ The stack class has a fixed size, which must be stated when the class is initial
 LockFreeIndexStack stack(4);  // creates a stack containing: 0, 1, 2, 3
 ```
 
-Main methods, `push`, `pop` and `pop_try`, are lock free, but not wait free. They can be used to extract and push back values to the stack.
+The main methods are `push`, `pop` and `pop_try`. They are lock free, but not wait free. They can be used to extract and push back values to the stack.
 ```c++
 LockFreeIndexStack stack(4);  // creates a stack containinig: 0, 1, 2, 3
 LockFreeIndexStack::index_t index = stack.pop(); // Get an index from the stack. Spin locks until one is available.
-// ... do something with the index
+// ... do something with 'index'
 stack.push(index); // return index to the stack.
 ```
 
@@ -31,7 +31,7 @@ else {
 }
 ```
 
-There are no error checks on `push`: if you push to the stack a value that was not previosuly extracted from the stack, or if you push twice the same value to the stack, you will corrupt the stack.
+There are no error checks on `push`: if you push to the stack a value that was not previosuly extracted from the stack, or if you push to teh stack a value which is already contained, you will corrupt the stack.
 
 ```c++
 LockFreeIndexStack stack(4);  // creates a stack containinig: 0, 1, 2, 3
@@ -50,8 +50,19 @@ stack.push(index); // return 'index' to the stack.
 stack.push(index); // corrupts the stack, becuase 'index' has been already returned
 ```
 
-There is a very remote possibility that the class fails and the stack gest corrupted.
-The `pop` and `pop_try` methods attempt an atomic compare and exchage of the top of the stack. They also use a 32 bits counter which is incremented at every operation to avoid the ABA problem, but there is one particular case where the ABA problem can still occurr. This is explained in the code below.
+An example of how this can be used to construct a stack of generic objects
+```c++
+class MyWorkspace { };
+const LockFreeIndexStack::index_t nElements = 4;
+LockFreeIndexStack stack(nElements);  // creates a stack containinig: 0, 1, 2, 3
+std::vector<MyClass> vec(nElements);  // creates a vector with 4 objects of type 'MyWorkspace'
+LockFreeIndexStack::index_t index = stack.pop(); // Get an index from the stack. Spin locks until one is available.
+MyWorkspace& ws(vec[index]); // get the object indexed by 'index'
+// ... do something with the 'ws'
+stack.push(index); // return index to the stack.
+```
+
+There is a very remote possibility that the class fails and the stack gest corrupted. This is explained in details in the code below. The risk is negligible for most use cases.
 ```c++
 index_t pop_try()
 {
