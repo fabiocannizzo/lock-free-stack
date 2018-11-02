@@ -84,6 +84,13 @@ namespace LockFree
             if (candidate != s_null) {
                 index_t next = m_next[candidate];
                 Bundle newtop(next, curtop.m_value.m_count + 1);
+                // In the very remote eventuality that, while this thread is here,
+                // all the below circumstances occur simultaneously:
+                // - other threads execute exactly a multiple of 2^32 pop or push operations,
+                //   so that 'm_count' assumes again the original value;
+                // - the value read as 'candidate' 2^32 transactions ago is again top of the stack;
+                // - the value 'm_next[candidate]' is no longer what it was 2^32 transactions ago
+                // then the stack will get corrupted
                 if (m_top.compare_exchange_weak(curtop.m_bundle, newtop.m_bundle)) {
                     return candidate;
                 }
